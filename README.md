@@ -1,7 +1,7 @@
 # ai-mini-project
-- This project was completed in accordance with Virginia Tech's CS 4804 "Introduction to AI"
-- The purpose of this project is to more efficiently pathfind students through Virginia Tech's campus
-- We utilize an A* search agent to calculate the backwards cost and estimate the forwards cost of a path in the given map
+- This project was completed per Virginia Tech's CS 4804 "Introduction to AI"
+- The purpose of this project is to pathfind students more efficiently through Virginia Tech's campus
+- We utilize an A* search agent to calculate the backward cost and estimate the forward cost of a path in the given map
 
 # Project Description
 - Made up of (currently) 4 distinct classes
