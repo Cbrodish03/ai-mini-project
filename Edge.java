@@ -21,7 +21,7 @@ public class Edge {
      * @param n2 second edge
      * @param weight the weight (distance/travel time) of the edge
      */
-    public Edge(Node n1, node n2, double weight) {
+    public Edge(Node n1, Node n2, double weight) {
         this.n1 = n1;
         this.n2 = n2;
         this.weight = weight;
