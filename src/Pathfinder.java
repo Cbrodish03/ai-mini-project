@@ -1,3 +1,5 @@
+package src;
+
 /**
  * Container Class for the Project, holding most contents for the A* search agent
  * 

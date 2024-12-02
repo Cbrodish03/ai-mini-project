@@ -1,3 +1,5 @@
+package src;
+
 /**
  * Class of a "Node" object, should contain the name the node represents and the coordinates
  * 

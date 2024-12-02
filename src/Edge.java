@@ -1,3 +1,5 @@
+package src;
+
 /**
  * Edge object, holding two nodes
  * 
