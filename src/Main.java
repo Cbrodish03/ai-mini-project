@@ -5,12 +5,14 @@ public class Main {
         try {
             // Create a new CampusMap instance
             CampusMap campusMap = new CampusMap();
+            CampusGUI campusGUI = new CampusGUI(campusMap);
 
             // Load the map from a JSON file
             campusMap.loadFromJson("./graph.json");
 
             // Print the map for debugging
             campusMap.printMap();
+            campusGUI.initializeUI();
 
             // Example: Use the nodes and edges for pathfinding
             System.out.println("Number of nodes: " + campusMap.getNodes().size());
