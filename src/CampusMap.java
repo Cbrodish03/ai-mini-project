@@ -1,4 +1,5 @@
 package src;
+
 import java.io.FileReader;
 import java.util.*;
 import com.google.gson.*;
@@ -7,7 +8,7 @@ public class CampusMap {
 
     // - Fields
     private Map<String, Node> nodes; // Map of node coordinates to Node objects
-    private List<Edge> edges;        // List of edges connecting nodes
+    private List<Edge> edges; // List of edges connecting nodes
 
     // - Constructor(s)
 
@@ -35,11 +36,21 @@ public class CampusMap {
         // Parse nodes
         JsonArray nodesJson = mapJson.getAsJsonArray("nodes");
         for (JsonElement nodeElement : nodesJson) {
-            String[] coordinates = nodeElement.getAsString().split(",");
-            double latitude = Double.parseDouble(coordinates[0]);
-            double longitude = Double.parseDouble(coordinates[1]);
+            JsonObject nodeObject = nodeElement.getAsJsonObject();
+
+            String coordinates = nodeObject.get("coordinates").getAsString();
+            String[] latLong = coordinates.split(",");
+            double latitude = Double.parseDouble(latLong[0]);
+            double longitude = Double.parseDouble(latLong[1]);
+
+            boolean isStep = nodeObject.get("isStep").getAsBoolean();
+            String surface = (nodeObject.has("surface") && !nodeObject.get("surface").isJsonNull())
+                    ? nodeObject.get("surface").getAsString()
+                    : null;
             String name = "Node(" + latitude + "," + longitude + ")";
-            nodes.put(nodeElement.getAsString(), new Node(name, latitude, longitude));
+            Node node = new Node(name, latitude, longitude, surface, isStep);
+
+            nodes.put(coordinates, node);
         }
 
         // Parse edges
@@ -69,7 +80,7 @@ public class CampusMap {
         System.out.println("Edges:");
         for (Edge edge : edges) {
             System.out.println("  " + edge.getFirstNode().getName() + " -> " +
-                edge.getSecondNode().getName() + " with weight " + edge.getWeight());
+                    edge.getSecondNode().getName() + " with weight " + edge.getWeight());
         }
     }
 

@@ -8,7 +8,7 @@ public class Main {
             CampusGUI campusGUI = new CampusGUI(campusMap);
 
             // Load the map from a JSON file
-            campusMap.loadFromJson("./graph.json");
+            campusMap.loadFromJson("./graphUpdated.json");
 
             // Print the map for debugging
             campusMap.printMap();
