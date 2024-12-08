@@ -8,7 +8,7 @@ public class CampusMap {
 
     // - Fields
     private Map<String, Node> nodes; // Map of node coordinates to Node objects
-    private List<Edge> edges; // List of edges connecting nodes
+    private ArrayList<Edge> edges; // List of edges connecting nodes
 
     // - Constructor(s)
 
@@ -48,7 +48,7 @@ public class CampusMap {
                     ? nodeObject.get("surface").getAsString()
                     : null;
             String name = "Node(" + latitude + "," + longitude + ")";
-            Node node = new Node(name, latitude, longitude, surface, isStep);
+            Node node = new Node(name, latitude, longitude);
 
             nodes.put(coordinates, node);
         }
@@ -98,7 +98,7 @@ public class CampusMap {
      * 
      * @return A list of edges
      */
-    public List<Edge> getEdges() {
+    public ArrayList<Edge> getEdges() {
         return edges;
     }
 }

@@ -2,11 +2,12 @@ package src;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;  // This was missing - needed for MouseAdapter, MouseEvent, etc.
+import java.awt.event.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
+import java.util.List;
 
 public class CampusGUI extends JFrame {
     private final CampusMap map;
@@ -28,12 +29,17 @@ public class CampusGUI extends JFrame {
     private static class MapPanel extends JPanel {
         private final CampusMap map;
         private BufferedImage mapImage;
-        private double scale = 0.1;  // Start zoomed out
+        private double scale = 0.1;
         private double offsetX = 0;
         private double offsetY = 0;
         private Point lastDragPoint = null;
-
-        // QGIS map bounds
+        
+        // Fields for path selection
+        private Node selectedStart = null;
+        private Node selectedEnd = null;
+        private List<Node> currentPath = null;
+        private double currentPathDistance = 0.0;
+        
         private final double MAP_XMIN = -80.443586959;
         private final double MAP_XMAX = -80.391861732;
         private final double MAP_YMIN = 37.211987932;
@@ -46,11 +52,6 @@ public class CampusGUI extends JFrame {
             loadMapImage();
             setupListeners();
             setPreferredSize(new Dimension(MAP_WIDTH, MAP_HEIGHT));
-            
-            // Debug: Print coordinates
-            System.out.println("DEBUG: Map bounds:");
-            System.out.println("Longitude (X): " + MAP_XMIN + " to " + MAP_XMAX);
-            System.out.println("Latitude (Y): " + MAP_YMIN + " to " + MAP_YMAX);
         }
 
         private void loadMapImage() {
@@ -61,22 +62,29 @@ public class CampusGUI extends JFrame {
             }
         }
 
-        private int longitudeToX(double longitude) {
-            if (longitude > 0) {  // If it's actually a latitude
-                return -1;  // Invalid conversion
+        private Node findNearestNode(Point clickPoint) {
+            Node nearest = null;
+            double minDistance = Double.MAX_VALUE;
+            
+            double mapX = (clickPoint.x / scale) - offsetX;
+            double mapY = (clickPoint.y / scale) - offsetY;
+            
+            for (Node node : map.getNodes()) {
+                int nodeX = longitudeToX(node.getY());
+                int nodeY = latitudeToY(node.getX());
+                
+                double distance = Math.sqrt(
+                    Math.pow((mapX - nodeX), 2) + 
+                    Math.pow((mapY - nodeY), 2)
+                );
+                
+                if (distance < minDistance && distance < 50) {
+                    minDistance = distance;
+                    nearest = node;
+                }
             }
-            double proportion = (longitude - MAP_XMIN) / (MAP_XMAX - MAP_XMIN);
-            int pixelX = (int) (proportion * MAP_WIDTH);
-            return pixelX;
-        }
-
-        private int latitudeToY(double latitude) {
-            if (latitude < 0) {  // If it's actually a longitude
-                return -1;  // Invalid conversion
-            }
-            double proportion = (latitude - MAP_YMIN) / (MAP_YMAX - MAP_YMIN);
-            int pixelY = MAP_HEIGHT - (int) (proportion * MAP_HEIGHT);  // Invert Y coordinate
-            return pixelY;
+            
+            return nearest;
         }
 
         @Override
@@ -84,17 +92,12 @@ public class CampusGUI extends JFrame {
             super.paintComponent(g);
             Graphics2D g2d = (Graphics2D) g;
 
-            // Enable antialiasing
             g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-
-            // Store the original transform
             AffineTransform originalTransform = g2d.getTransform();
 
-            // Apply zoom and pan
             g2d.scale(scale, scale);
             g2d.translate(offsetX, offsetY);
 
-            // Draw the map image
             if (mapImage != null) {
                 g2d.drawImage(mapImage, 0, 0, MAP_WIDTH, MAP_HEIGHT, null);
             }
@@ -103,36 +106,64 @@ public class CampusGUI extends JFrame {
             g2d.setColor(Color.RED);
             g2d.setStroke(new BasicStroke(3.0f));
             for (Edge edge : map.getEdges()) {
-                // Note the swapped coordinates
-                int x1 = longitudeToX(edge.getFirstNode().getY());  // Y holds longitude
-                int y1 = latitudeToY(edge.getFirstNode().getX());   // X holds latitude
+                int x1 = longitudeToX(edge.getFirstNode().getY());
+                int y1 = latitudeToY(edge.getFirstNode().getX());
                 int x2 = longitudeToX(edge.getSecondNode().getY());
                 int y2 = latitudeToY(edge.getSecondNode().getX());
                 
-                // Only draw if coordinates are valid
                 if (x1 >= 0 && y1 >= 0 && x2 >= 0 && y2 >= 0) {
                     g2d.drawLine(x1, y1, x2, y2);
                 }
             }
 
+            // Draw the path if it exists
+            if (currentPath != null && currentPath.size() > 1) {
+                g2d.setColor(Color.YELLOW);
+                g2d.setStroke(new BasicStroke(5.0f));
+                
+                for (int i = 0; i < currentPath.size() - 1; i++) {
+                    Node current = currentPath.get(i);
+                    Node next = currentPath.get(i + 1);
+                    
+                    int x1 = longitudeToX(current.getY());
+                    int y1 = latitudeToY(current.getX());
+                    int x2 = longitudeToX(next.getY());
+                    int y2 = latitudeToY(next.getX());
+                    
+                    if (x1 >= 0 && y1 >= 0 && x2 >= 0 && y2 >= 0) {
+                        g2d.drawLine(x1, y1, x2, y2);
+                    }
+                }
+            }
+
             // Draw nodes
-            g2d.setColor(Color.BLUE);
             int nodeSize = 10;
             for (Node node : map.getNodes()) {
-                // Note the swapped coordinates
-                int x = longitudeToX(node.getY());  // Y holds longitude
-                int y = latitudeToY(node.getX());   // X holds latitude
+                int x = longitudeToX(node.getY());
+                int y = latitudeToY(node.getX());
                 
-                // Only draw if coordinates are valid
                 if (x >= 0 && y >= 0) {
+                    if (node == selectedStart || node == selectedEnd) {
+                        g2d.setColor(Color.YELLOW);
+                        nodeSize = 15;
+                    } else {
+                        g2d.setColor(Color.BLUE);
+                        nodeSize = 10;
+                    }
                     g2d.fillOval(x - nodeSize/2, y - nodeSize/2, nodeSize, nodeSize);
                 }
             }
 
-            // Reset transform
+            // Draw distance information if path exists
+            if (currentPath != null && !currentPath.isEmpty()) {
+                g2d.setTransform(originalTransform);
+                g2d.setColor(Color.BLACK);
+                g2d.setFont(new Font("Arial", Font.BOLD, 14));
+                g2d.drawString(String.format("Distance: %.2f meters", currentPathDistance), 10, 60);
+                g2d.drawString(String.format("Nodes in path: %d", currentPath.size()), 10, 80);
+            }
+
             g2d.setTransform(originalTransform);
-            
-            // Draw debug info
             g2d.setColor(Color.BLACK);
             g2d.setFont(new Font("Arial", Font.PLAIN, 12));
             g2d.drawString("Scale: " + String.format("%.2f", scale), 10, 20);
@@ -140,31 +171,58 @@ public class CampusGUI extends JFrame {
         }
 
         private void setupListeners() {
-            // Zooming with mouse wheel
             addMouseWheelListener(e -> {
                 Point mousePoint = e.getPoint();
                 double oldScale = scale;
-                
                 double delta = -0.1 * e.getPreciseWheelRotation();
                 scale = Math.max(0.1, Math.min(5.0, scale + delta));
-                
                 double factor = scale / oldScale - 1.0;
                 offsetX -= mousePoint.x * factor;
                 offsetY -= mousePoint.y * factor;
-                
                 repaint();
             });
 
-            // Panning with mouse drag
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
+                    if (SwingUtilities.isLeftMouseButton(e)) {
+                        Node clickedNode = findNearestNode(e.getPoint());
+                        if (clickedNode != null) {
+                            if (selectedStart == null) {
+                                selectedStart = clickedNode;
+                                currentPath = null;
+                                currentPathDistance = 0.0;
+                                System.out.println("Selected start node: " + clickedNode.getName());
+                            } else if (selectedEnd == null && clickedNode != selectedStart) {
+                                selectedEnd = clickedNode;
+                                System.out.println("Selected end node: " + clickedNode.getName());
+                                Pathfinder.PathResult result = Pathfinder.aStarSearch(selectedStart, selectedEnd, map.getEdges());
+                                currentPath = result.getPath();
+                                currentPathDistance = result.getDistance();
+                                
+                                if (!currentPath.isEmpty()) {
+                                    System.out.println("Path found with " + currentPath.size() + " nodes and distance " + currentPathDistance + " meters");
+                                } else {
+                                    System.out.println("No path found between selected nodes");
+                                }
+                            } else {
+                                selectedStart = clickedNode;
+                                selectedEnd = null;
+                                currentPath = null;
+                                currentPathDistance = 0.0;
+                                System.out.println("Reset to new start node: " + clickedNode.getName());
+                            }
+                            repaint();
+                        }
+                    } else if (SwingUtilities.isRightMouseButton(e)) {
+                        selectedStart = null;
+                        selectedEnd = null;
+                        currentPath = null;
+                        currentPathDistance = 0.0;
+                        System.out.println("Reset all selections");
+                        repaint();
+                    }
                     lastDragPoint = e.getPoint();
-                }
-
-                @Override
-                public void mouseReleased(MouseEvent e) {
-                    lastDragPoint = null;
                 }
             });
 
@@ -181,6 +239,18 @@ public class CampusGUI extends JFrame {
                     }
                 }
             });
+        }
+
+        private int longitudeToX(double longitude) {
+            if (longitude > 0) return -1;
+            double proportion = (longitude - MAP_XMIN) / (MAP_XMAX - MAP_XMIN);
+            return (int) (proportion * MAP_WIDTH);
+        }
+
+        private int latitudeToY(double latitude) {
+            if (latitude < 0) return -1;
+            double proportion = (latitude - MAP_YMIN) / (MAP_YMAX - MAP_YMIN);
+            return MAP_HEIGHT - (int) (proportion * MAP_HEIGHT);
         }
     }
 }
