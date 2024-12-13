@@ -3,6 +3,12 @@ package src;
 import java.io.FileReader;
 import java.util.*;
 import com.google.gson.*;
+/**
+ * CanvasMap class, holds the nodes and edges of the map
+ * 
+ * @author cbrodish03 hosamk Zachvhincent
+ * @version 11/25/2024
+ */
 
 public class CampusMap {
 

@@ -1,5 +1,11 @@
 package src;
 
+/**
+ * Main class, loads the map and runs the GUI
+ * 
+ * @author cbrodish03 hosamk Zachvhincent
+ * @version 11/25/2024
+ */
 public class Main {
     public static void main(String[] args) {
         try {

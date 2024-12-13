@@ -2,7 +2,7 @@ package src;
 /**
  * Class of a "Node" object, should contain the name the node represents and the coordinates
  * 
- * @author cbrodish03
+ * @author cbrodish03 hosamk Zachvhincent
  * @version 11/25/2024
  */
 public class Node implements Comparable<Node> {

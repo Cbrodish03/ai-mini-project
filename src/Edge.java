@@ -3,7 +3,7 @@ package src;
 /**
  * Edge object, holding two nodes
  * 
- * @author cbrodish03
+ * @author cbrodish03 hosamk Zachvhincent
  * @version 11/25/2024
  */
 public class Edge {

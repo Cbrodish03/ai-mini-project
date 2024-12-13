@@ -5,6 +5,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.Set;
+/**
+ * Pathfinder class, pathfinds using A* algorithm between two nodes
+ * 
+ * @author cbrodish03 hosamk Zachvhincent
+ * @version 11/25/2024
+ */
 
 public class Pathfinder {
     

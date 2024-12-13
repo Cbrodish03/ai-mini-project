@@ -8,6 +8,12 @@ import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.util.List;
+/**
+ * Campus GUI, loads the map and runs the GUI
+ * 
+ * @author cbrodish03 hosamk Zachvhincent
+ * @version 11/25/2024
+ */
 
 public class CampusGUI extends JFrame {
     private final CampusMap map;
